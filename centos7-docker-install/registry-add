@@ -1,0 +1,4 @@
+#增加registry地址
+ vi  /usr/lib/systemd/system/docker.service 
+  systemctl daemon-reload
+ service docker restart
