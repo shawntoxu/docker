@@ -1,0 +1,27 @@
+
+upstream config_test {
+        server 127.0.0.1:8080;
+}
+
+server {
+     listen 80;
+     server_name  127.0.0.1;
+     location / {
+            root   html/html;
+            index  index.html index.htm;
+        if ($query_string) {
+           expires max;
+        }
+    }
+
+     location ~ ^/(api|export|rest) {
+            proxy_pass_header Server;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Scheme $scheme;
+            proxy_pass http://config_test;
+  }
+
+}
+
