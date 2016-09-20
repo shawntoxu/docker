@@ -1,4 +1,4 @@
-Kubernetes plugin for OpenStack Heat
+k8s plugin for os Heat
 ====================================
 
 This plugin enable using Kubernetes pod, service, replicationcontroller as resources in a Heat template.
