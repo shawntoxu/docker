@@ -1,0 +1,93 @@
+{
+"kind": "ReplicationController",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "yscheduler-test-1",
+    "namespace": "default", 
+     "labels": {
+      "name": "yscheduler-test",
+      "version": "1"
+    }
+  },
+  "spec":{
+    "replicas": 1,
+    "selector":{
+      "name":"yscheduler-test",
+      "version":"1"
+    },
+    "template":{
+      "metadata":{
+        "namespace": "default",
+        "labels":{
+          "name": "yscheduler-test",
+          "version":"1"
+        }
+      },
+      "spec":{
+           "volumes": [ 
+             {
+               "name": "host-log",
+                "hostPath": {"path": "/dianyi/log/yscheduler"}
+             }  
+           ],
+          "containers":[
+          {
+            "name":"yscheduler-test",
+            "image":"172.30.80.37:5000/myregistry/yscheduler-local:1.0",
+             "env": [
+                 {
+                  "name": "DBCONFIG",
+                  "value":"DBCONFIG"
+                 },
+                 {
+                  "name": "JAVA_OPTS",
+                  "value":"JAVA_OPTS"
+                 },
+                 {
+                  "name": "CATALINA_HOME",
+                  "value":"/root/tomcat"
+                 }
+              ],
+             "resources": {
+              "limits": {
+                "memory": "512Mi"
+              },
+	      "requests":{
+                "memory": "400Mi"
+              }
+            },
+           "ports": [ ],
+	   "readinessProbe": {
+            	"initialDelaySeconds": 10,
+		"timeoutSeconds": 1,
+		"httpGet": {
+			"path": "/",
+			"port": 8081
+                }
+            },
+           "lifecycle": {
+                    "preStop": {
+                        "exec": {
+                            "command": [
+                                "/root/tomcat/bin/shutdown.sh"
+                            ]
+                        }
+                  }
+            },
+           "volumeMounts": [
+            {
+                "name": "host-log",
+                "readOnly": false,
+                "mountPath": "/root/tomcat/logs"
+            }
+           ]
+         }
+        ],
+	"nodeSelector": {
+            "usergroup":"test"
+        }
+      }
+    }
+  }
+}
+

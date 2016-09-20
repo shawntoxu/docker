@@ -1,0 +1,34 @@
+{
+  "heat_template_version": "2013-05-23",
+  "description": "Heat template to deploy kubernetes replication controllers and services to an existing host",
+  "resources": {
+    "yscheduler-web": {
+      "depends_on": [
+       "yscheduler-svc"
+       ],
+      "type": "GoogleInc::Kubernetes::ReplicationController",
+      "properties": {
+        "namespace": "$NAMESPACE",
+        "apiversion": "$APIVERSION",
+        "definition_location": "$PATH/yscheduler-rc.json",
+        "kubernetes_endpoint": "$IPADDWITHPORT",
+        "rolling_updates": {
+          "batch_percentage":$UPD_PERCENTAGE_CONFIG,
+          "pause_time": $UPD_PAUSE_TIME_CONFIG
+         }, 
+        "token": "$TOKEN"
+      }
+    },
+    "yscheduler-svc": {
+      "type": "GoogleInc::Kubernetes::Service",
+      "properties": {
+        "namespace": "$NAMESPACE",
+        "apiversion": "$APIVERSION",
+        "definition_location": "$PATH/yscheduler-service.json",
+        "kubernetes_endpoint": "$IPADDWITHPORT",
+        "token": "$TOKEN"
+      }
+    }
+  }
+
+}

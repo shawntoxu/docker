@@ -1,0 +1,27 @@
+{
+"kind": "Service",
+    "apiVersion": "v1",
+    "metadata": {
+        "namespace": "default",
+        "name": "yscheduler-service",
+        "labels":{
+          "name":"yscheduler-service"
+        }
+    },
+    "spec": {
+        "selector": {
+            "name": "yscheduler-test"
+        },
+        "sessionAffinity": "ClientIP",
+        "ports": [
+            {
+                "protocol": "TCP",
+                "port": 8081,
+                "targetPort":8081
+            }
+        ],
+        "deprecatedPublicIPs": [
+            "172.30.80.38"
+        ]
+    }
+}
