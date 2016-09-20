@@ -1,0 +1,8 @@
+- name: Start ETCD servers
+  hosts: etcd_hosts
+  sudo: True
+  vars:
+    paas_root: /opt/paas
+  tasks:
+    - name: start ETCD servers
+      shell: source {{ paas_root }}/profile.sh; start-etcd-local.sh

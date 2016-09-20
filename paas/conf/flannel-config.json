@@ -1,0 +1,10 @@
+{
+    "Network": "10.10.0.0/16",
+    "SubnetLen": 24,
+    "SubnetMin": "10.10.0.0",
+    "SubnetMax": "10.10.254.0",
+    "Backend": {
+        "Type": "udp",
+        "Port": 7890
+    }
+}
