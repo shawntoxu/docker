@@ -1,0 +1,6 @@
+zabbix 自定义监控项
+
+脚本放于/etc/zabbix/scripts/
+自定义配置 xx.conf 放于/etc/zabbix/zabbix_agentd.d/ 下
+
+
