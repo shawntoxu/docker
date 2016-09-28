@@ -1,0 +1,146 @@
+{
+    "description": "Heat template to deploy kubernetes replication controllers and services to an existing host", 
+    "heat_template_version": "2013-05-23", 
+    "resources": {
+        "image-svc": {
+            "properties": {
+                "apiversion": "v1", 
+                "definition": {
+                    "apiVersion": "v1", 
+                    "kind": "Service", 
+                    "metadata": {
+                        "labels": {
+                            "name": "image-server-service"
+                        }, 
+                        "name": "image-server-service", 
+                        "namespace": "image-server"
+                    }, 
+                    "spec": {
+                        "deprecatedPublicIPs": [
+                            "10.2.33.34,10.2.33.35"
+                        ], 
+                        "ports": [
+                            {
+                                "port": 42000, 
+                                "protocol": "TCP", 
+                                "targetPort": 8080
+                            }
+                        ], 
+                        "selector": {
+                            "name": "image-server-web"
+                        }
+                    }
+                }, 
+                "kubernetes_endpoint": "http://10.2.33.10:8080", 
+                "namespace": "image-server", 
+                "token": "$TOKEN"
+            }, 
+            "type": "GoogleInc::Kubernetes::Service"
+        }, 
+        "image-web": {
+            "depends_on": [
+                "image-svc"
+            ], 
+            "properties": {
+                "apiversion": "v1", 
+                "definition": {
+                    "apiVersion": "v1", 
+                    "kind": "ReplicationController", 
+                    "metadata": {
+                        "labels": {
+                            "internalID": "22222", 
+                            "name": "image-server-web", 
+                            "version": "@"
+                        }, 
+                        "name": "image-server-web-@", 
+                        "namespace": "image-server"
+                    }, 
+                    "spec": {
+                        "replicas": 4, 
+                        "selector": {
+                            "internalID": "22222", 
+                            "name": "image-server-web", 
+                            "version": "@"
+                        }, 
+                        "template": {
+                            "metadata": {
+                                "labels": {
+                                    "internalID": "22222", 
+                                    "name": "image-server-web", 
+                                    "version": "@"
+                                }, 
+                                "namespace": "image-server"
+                            }, 
+                            "spec": {
+                                "containers": [
+                                    {
+                                        "env": [
+                                            {
+                                                "name": "CATALINA_HOME", 
+                                                "value": "/root/app/tomcat"
+                                            }
+                                        ], 
+                                        "image": "abc:5000/image-server/image-server:@", 
+                                        "lifecycle": {
+                                            "preStop": {
+                                                "exec": {
+                                                    "command": [
+                                                        "/root/app/tomcat/bin/shutdown.sh"
+                                                    ]
+                                                }
+                                            }
+                                        }, 
+                                        "name": "image-server-web", 
+                                        "ports": [], 
+                                        "readinessProbe": {
+                                            "httpGet": {
+                                                "path": "/index.jsp", 
+                                                "port": 8080
+                                            }, 
+                                            "initialDelaySeconds": 5, 
+                                            "timeoutSeconds": 1
+                                        }, 
+                                        "resources": {
+                                            "limits": {
+                                                "memory": "1.5Gi"
+                                            }, 
+                                            "requests": {
+                                                "memory": "400Mi"
+                                            }
+                                        }, 
+                                        "volumeMounts": [
+                                            {
+                                                "mountPath": "/mnt/", 
+                                                "name": "host-log", 
+                                                "readOnly": false
+                                            }
+                                        ]
+                                    }
+                                ], 
+                                "nodeSelector": {
+                                    "usergroup": "vncc"
+                                }, 
+                                "volumes": [
+                                    {
+                                        "hostPath": {
+                                            "path": "/root/log/image-server"
+                                        }, 
+                                        "name": "host-log"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }, 
+                "kubernetes_endpoint": "http://10.2.33.10:8080", 
+                "namespace": "image-server", 
+                "rolling_updates": {
+                    "batch_percentage": 50, 
+                    "pause_time": 5
+                }, 
+                "token": "$TOKEN"
+            }, 
+            "type": "GoogleInc::Kubernetes::ReplicationController"
+        }
+    }
+}
