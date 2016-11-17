@@ -1,0 +1,17 @@
+#dep arping 
+
+apt-get install arping 
+
+cp pipework-master/pipework  /usr/local/bin/
+
+
+# run docker 
+docker run -d --name="test-net" --net=none abc:5000/apache:test
+
+
+#set ip and  gateway 
+#ip=172.30.80.115/24
+#gateway=172.30.80.254
+
+pipework br0 test-net 172.30.80.115/24@172.30.80.254
+
