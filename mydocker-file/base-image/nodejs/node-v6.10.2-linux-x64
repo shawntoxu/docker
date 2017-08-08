@@ -1,0 +1,19 @@
+FROM abc:5000/ubuntu-sshd
+ADD ./node-v6.10.2-linux-x64 ./app/soft/node-v6.10.2-linux-x64
+ENV NODEJS_HOME=/app/soft/node-v6.10.2-linux-x64
+ENV LANG C.UTF-8
+RUN \
+    echo 'PATH=$PATH:$NODEJS_HOME/bin' >> /root/.bashrc && \
+    echo 'export PATH' >> /root/.bashrc && \
+    echo 'PATH=$PATH:$NODEJS_HOME/bin' >> /etc/profile && \
+    echo 'export PATH' >> /etc/profile
+
+#install phantomjs libraries
+RUN apt-get install libfontconfig -y && rm -rf /var/lib/apt/lists/*
+
+RUN ["/bin/bash", "-c", "source /root/.bashrc ; source /etc/profile"]
+
+
+# run  "source /etc/profile " first 
+
+~                                                                             
