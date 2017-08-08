@@ -1,0 +1,13 @@
+FROM abc:5000/ubuntu-sshd
+ADD ./jdk1.8.0_131 ./app/soft/jdk1.8.0_131
+ENV JAVA_HOME=/app/soft/jdk1.8.0_131
+ENV LANG C.UTF-8
+RUN echo 'PATH=$PATH:$JAVA_HOME/bin' >> ~/.bashrc && \
+    echo 'export PATH' >>  ~/.bashrc && \
+    echo 'export JAVA_HOME=/app/soft/jdk1.8.0_131' >> /etc/profile && \
+    echo 'PATH=$PATH:$JAVA_HOME/bin' >> /etc/profile && \
+    echo 'export PATH' >> /etc/profile
+
+# how to use ?
+# start an app must first run 
+#　source /etc/profile 
