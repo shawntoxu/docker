@@ -22,6 +22,7 @@
 
  pip install  python-etcd flask flask-restful
 
+rm /var/lib/apt/lists/lock 
  检查是否支持aufs 文件系统
  lsmod | grep aufs,没有的话需要安装
  apt-get install -y linux-image-extra-$(uname -r) linux-image-extra-virtual
@@ -39,14 +40,41 @@ cd conf
 修改flannel的ip地址段
 flannel-config.json 
 
-修改paas.conf配置
+修改yaas.conf配置
 YAAS_MASTER
+YAAS_NODES
 ETCD_HOSTS
 ETCD_NODE_NAMES
+KUBE_API_SERVICE_CLUSTER_IP_RANGE
+
+
+
 
 将xxx_LOG_FILE 注释掉
 修改REGISTRY 地址
 DOCKER_INSECURE_REGISTRY_LIST
+
+
+如果增加了证书 
+修改证书相关文件
+
+在启动master节点前生成证书，否则重新生成证书需要重新启动master
+生成证书文件
+   openssl req \
+  -newkey rsa:4096 -nodes -sha256 -keyout /opt/yaas/auth/ssl-cert/server.key \
+  -x509 -days 3650 -out /opt/yaas/auth/ssl-cert/server.crt
+
+FQDN 输入master主机域名： 比如这里是test.k8s.cc
+
+
+
+根据要安装的docker 版本修改 docker安装及启动脚本 /opt/yaas/1.2/bin/start-docker.sh 
+要安装的版本 :DOCKER_VERSION  
+
+docker后台启动方式
+docker -d  低版本支持
+dockerd 或者  docker daemon  高版本支持
+
 
 
 配置环境变量
@@ -73,8 +101,17 @@ master 节点
   start-minion-local.sh 
 
 
+  验证 flanneld 是否写数据到etcd 
+   curl http://172.30.80.23:4001/v2/keys  | python -m  json.tool 
+curl http://172.30.80.23:4001/v2/keys/coreos.com/network  | python -m  json.tool 
+
+
+
  完成后测试
  kubectl get node 
+
+
+ 
  
 成功后将配置好的软件包发送到minon节点
 scp -r paas root@172.30.10.192:/home/opt/
@@ -83,7 +120,7 @@ minion 节点
   1 在/root/.bashrc最后加入master的访问地址环境变量及其他环境变量
 
 	export KUBERNETES_MASTER=172.30.10.191:8080
-	source /opt/paas/profile.sh
+	source /opt/yaas/profile.sh
 
   2 安装docker 
      update_docker.sh 
@@ -91,7 +128,6 @@ minion 节点
   3 docker 安装或更新完成后直接启动minion
     start-minion-local.sh 
 
-  
   然后在master 节点做验证看是否已经连接上
   kubectl get node
 
@@ -102,21 +138,26 @@ minion 节点
 
 无法下载images
 给docker绑定地址配上 registry 时要写等号(=)  --insecure-registry=
---insecure-registry=xxxx:5000 
+--insecure-registry=xa.repo.ndp.com:5000 
 
-修改 /opt/paas/1.0/bin/start-docker.sh   大概46左右
+修改 /opt/yaas/1.0/bin/start-docker.sh   大概46左右
 重启docker ./start-docker.sh 
 
 重启后手动运行docker pull xxxx 可以下载images，但是如果使用k8s
 运行rc 就提示类似如下错误:
- image pull failed for registry:5000/web:1.0, this may be because there are no credentials on this request.  details: (API error (500): unable to ping registry endpoint https://registry:5000/v0/
+ image pull failed for 172.30.10.195:5000/gkt/gkt-web:1.0, this may be because there are no credentials on this request.  details: (API error (500): unable to ping registry endpoint https://172.30.10.195:5000/v0/
 
 改为用 registry的域名就可以下载images 并创建pod了
 
 --------------------------------------------------------------------------------------
 在master 上远程启动
 将/opt/paas  全部复制到minion节点
-scp -r /opt/paas  root@172.30.10.162:/opt
+scp -r /opt/yaas  root@172.30.10.162:/opt
 远程启动
 ssh root@172.30.10.162  bash -c "'source /opt/paas/profile.sh;start-minion-local.sh'" 
+
+
+
+
+
 
