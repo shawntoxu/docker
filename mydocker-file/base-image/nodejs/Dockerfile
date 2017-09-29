@@ -4,7 +4,7 @@ FROM node:argon
 MAINTAINER  PaaS/Shawn
 
 
-RUN apt-get update && apt-get install -y openssh-server
+RUN apt-get update && apt-get install -y openssh-server &&  rm -rf /var/lib/apt/lists/* 
 RUN mkdir -p /var/run/sshd
 
 RUN sed -i 's/^PermitRootLogin/#PermitRootLogin/' /etc/ssh/sshd_config  
