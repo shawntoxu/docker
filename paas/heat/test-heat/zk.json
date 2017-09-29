@@ -1,0 +1,106 @@
+{
+	"description": "Heat template to deploy kubernetes replication controllers and services to an existing host",
+	"heat_template_version": "2013-05-23",
+	"resources": {
+		"zk-rc": {
+			"type": "GoogleInc::Kubernetes::ReplicationController",
+			"properties": {
+				"apiversion": "v1",
+				"definition": {
+					"kind": "ReplicationController",
+					"apiVersion": "v1",
+					"metadata": {
+						"name": "zk",
+						"namespace": "zk1",
+						"labels": {
+							"name": "zk",
+							"version": "3.4.6",
+							"internalID": "3333333"
+						}
+					},
+					"spec": {
+						"replicas": 1,
+						"selector": {
+							"name": "zk",
+							"version": "3.4.6",
+							"internalID": "3333333"
+						},
+						"template": {
+							"metadata": {
+								"namespace": "zk1",
+								"labels": {
+									"name": "zk",
+									"version": "3.4.6",
+									"internalID": "3333333"
+								}
+							},
+							"spec": {
+								"volumes": [{
+									"name": "zk-data",
+									"hostPath": {
+										"path": "/var/lib/zk1-data"
+									}
+								}],
+								"containers": [{
+									"name": "zk1",
+									"image": "myregistry:5000/paas/zookeeper:3.4.6",
+									"volumeMounts": [{
+										"name": "zk-data",
+										"mountPath": "/usr/local/zookeeper/zk-data"
+									}],
+									"resources": {
+										"limits": {
+											"memory": "256Mi"
+										}
+									}
+								}],
+								"nodeSelector": {
+									"type": "zk1"
+								}
+							}
+						}
+					}
+				},
+				"kubernetes_endpoint": "https://test.k8s.cc:6443",
+				"rolling_updates": {
+					"batch_percentage": 50,
+					"pause_time": 5
+				},
+				"token": "myToken0",
+				"namespace": "zk1"
+			}
+		},
+		"zk-svc": {
+			"depends_on": ["zk-rc"],
+			"properties": {
+				"apiversion": "v1",
+				"definition": {
+					"kind": "Service",
+					"apiVersion": "v1",
+					"metadata": {
+						"namespace": "zk1",
+						"name": "zk",
+						"labels": {
+							"name": "zk1"
+						}
+					},
+					"spec": {
+						"ports": [{
+							"port": 42181,
+							"targetPort": 2181,
+							"protocol": "TCP"
+						}],
+						"deprecatedPublicIPs": ["172.30.80.23"],
+						"selector": {
+							"name": "zk"
+						}
+					}
+				},
+				"kubernetes_endpoint": "https://test.k8s.cc:6443",
+				"namespace": "zk1",
+				"token": "myToken0"
+			},
+			"type": "GoogleInc::Kubernetes::Service"
+		}
+	}
+}
