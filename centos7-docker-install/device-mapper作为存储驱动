@@ -1,0 +1,57 @@
+使用 device-mapper 最为存储驱动
+https://docs.docker.com/engine/userguide/storagedriver/device-mapper-driver/#increase-capacity-on-a-running-device
+
+安装必要软件
+yum install device-mapper-persistent-data  lvm2
+
+创建pv vg lv 等
+
+pvcreate /dev/vdb
+vgcreate docker /dev/vdb
+
+ lvcreate --wipesignatures y -n thinpool docker -l 95%VG
+ lvcreate --wipesignatures y -n thinpoolmeta docker -l 1%VG
+
+
+#Convert the volumes to a thin pool and a storage location for metadata for the thin pool, using the lvconvert command.
+
+ sudo lvconvert -y \
+--zero n \
+-c 512K \
+--thinpool docker/thinpool \
+--poolmetadata docker/thinpoolmeta
+
+
+#Configure autoextension of thin pools via an lvm profile
+ vi /etc/lvm/profile/docker-thinpool.profile
+
+ activation {
+  thin_pool_autoextend_threshold=80
+  thin_pool_autoextend_percent=20
+}
+
+lvchange --metadataprofile docker-thinpool docker/thinpool
+ lvs -o+seg_monitor
+
+#If you have ever run Docker on this host before, or if /var/lib/docker/ exists, move it out of the way so that Docker can use the new LVM pool to store the contents of image and container
+
+$ mkdir /var/lib/docker.bk
+$ mv /var/lib/docker/* /var/lib/docker.bk
+
+
+/etc/docker/daemon.json
+{
+    "storage-driver": "devicemapper",
+    "storage-opts": [
+    "dm.thinpooldev=/dev/mapper/docker-thinpool",
+    "dm.use_deferred_removal=true",
+    "dm.use_deferred_deletion=true"
+    ]
+}
+
+启动docker 
+
+如果配置正常 
+docker info  验证
+
+Data file and Metadata file  will be black ,and the pool name will be docker-thinpool.
