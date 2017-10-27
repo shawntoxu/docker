@@ -1,0 +1,12 @@
+config
+
+
+ echo 10.10.1.1 keystone > /etc/hosts 
+ 
+# set heat info to /root/.bashrc  
+export OS_PASSWORD=ADMIN_PASS
+export OS_AUTH_URL=http://10.10.1.1:35357/v2.0
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
+
+rm -rf /root/heatrc 
