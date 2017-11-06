@@ -68,14 +68,15 @@ mkdir -p "$(dirname $ETCD_LOG_FILE)"
 
 "$ETCD" -name=$node_name \
     -initial-advertise-peer-urls=http://$MY_IP:2380 \
-    -advertise-client-urls=http://$MY_IP:2380 \
-    -listen-peer-urls=http://$MY_IP:2380 \
-    -listen-client-urls="http://$MY_IP:4001,http://127.0.0.1:4001" \
+    -advertise-client-urls=http://$MY_IP:4001 \
+    -listen-peer-urls=http://0.0.0.0:2380 \
+    -listen-client-urls="http://0.0.0.0:4001" \
     -initial-cluster "$init_cluster_opt" \
     -data-dir=$ETCD_DATA_PATH \
-    -initial-cluster-token "etcd-cluster-122" \
+    -initial-cluster-token "etcd-cluster-23" \
     -initial-cluster-state new \
     >> $ETCD_LOG_FILE 2>&1 &
+
 
 sleep 5
 if is_binary_running $ETCD; then
