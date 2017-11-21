@@ -1,0 +1,69 @@
+{
+		"kind": "ReplicationController",
+		"apiVersion": "v1",
+		"spec": {
+			"selector": {
+				"version": "v2-20171121",
+				"name": "registry-v2",
+				"internalID": "east"
+			},
+			"template": {
+				"spec": {
+					"containers": [{
+						"image": "registry:2.6",
+						"name": "registry-v2",
+						"resources": {
+							"limits": {
+								"memory": "1000Mi"
+							}
+						},
+						"env": [{
+							"name": "registry_names",
+							"value": "s3"
+						},
+						{
+							"name": "region",
+							"value": "us-east-1"
+						},
+						{
+							"name": "buckett",
+							"value": "ym-docker-east"
+						},
+						{
+							"name": "accesskey",
+							"value": "YOU ACCESS KEY ID"
+						},
+						{
+							"name": "secretkey",
+							"value": "YOU SECRET　KEY"
+						},
+						{
+							"name": "rootdirectory",
+							"value": "/registry_v2_east"
+						}]
+					}],
+					"nodeSelector": {
+						"usergroup": "paas"
+					}
+				},
+				"metadata": {
+					"labels": {
+						"version": "v2-20171121",
+						"name": "registry-v2",
+						"internalID": "east"
+					},
+					"namespace": "paas-registry-v2"
+				}
+			},
+			"replicas": 1
+		},
+		"metadata": {
+			"labels": {
+				"version": "v2-20171121",
+				"name": "registry-v2",
+				"internalID": "east"
+			},
+			"namespace": "paas-registry-v2",
+			"name": "registry-v2-east"
+		}
+}
