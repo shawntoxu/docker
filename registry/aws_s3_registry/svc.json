@@ -1,0 +1,23 @@
+{
+		"kind": "Service",
+		"spec": {
+			"selector": {
+				"name": "registry-v2"
+			},
+			"ports": [{
+				"targetPort": 5000,
+				"protocol": "TCP",
+				"name": "port1",
+				"port": 45000
+			}],
+			"deprecatedPublicIPs": ["10.1.1.1"]  #you ip of registry 
+		},
+		"apiVersion": "v1",
+		"metadata": {
+			"labels": {
+				"name": "registry-v2"
+			},
+			"namespace": "paas-registry-v2",
+			"name": "registry-v2"
+		}
+}
