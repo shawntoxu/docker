@@ -1,0 +1,4 @@
+create registry with k8s & s3 
+
+kubectl create -f r.json 
+kubectl create -f svc.json 
