@@ -1,0 +1,29 @@
+
+dockerfile 中有几种运行软件或命令的方法，这些运行软件的方法不同：
+
+RUN是在Build时运行的，先于CMD和ENTRYPOINT。Build完成了，RUN也运行完成后，再运行CMD或者ENTRYPOINT。
+
+ENTRYPOINT和CMD的不同点在于执行docker run时参数传递方式，CMD指定的命令可以被docker run传递的命令覆盖，例如，如果用CMD指定：
+CMD ["echo"] 
+然后运行
+docker run CONTAINER_NAME echo foo
+
+那么CMD里指定的echo会被新指定的echo覆盖，所以最终相当于运行echo foo，所以最终打印出的结果就是：
+foo
+
+而ENTRYPOINT会把容器名后面的所有内容都当成参数传递给其指定的命令（不会对命令覆盖），比如
+ENTRYPOINT ["echo"]
+然后运行
+docker run CONTAINER_NAME echo foo
+则CONTAINER_NAME后面的echo foo都作为参数传递给ENTRYPOING里指定的echo命令了，所以相当于执行了
+echo "echo foo"
+最终打印出的结果就是：
+echo foo
+
+
+在Dockerfile中，ENTRYPOINT指定的参数比运行docker run时指定的参数更靠前，比如：
+ENTRYPOINT ["echo", "foo"]
+
+执行 docker run CONTAINER_NAME bar
+相当于执行了： echo foo bar 
+打印出的结果就是：foo bar

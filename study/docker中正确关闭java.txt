@@ -1,0 +1,2 @@
+PID=`pidof java` && kill -SIGTERM $PID && while ps -p $PID > /dev/null; 
+do sleep 1; done;

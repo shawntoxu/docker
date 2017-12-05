@@ -1,0 +1,301 @@
+1 docker 安装
+
+操作系统
+ubuntu 14.04 LTS 
+
+安装命令
+wget -qO- https://get.docker.com/ | sh
+
+这样会安装最新的docker版本
+如果要安装指定的版本
+先加入docker源
+在/etc/apt/sources.list.d 中加入docker.list，内容如下
+deb https://apt.dockerproject.org/repo ubuntu-trusty main
+
+ 然后更新再安装
+ apt-get update
+ apt-get install  docker-engine=1.8.3-0~trusty 
+
+
+
+安装完毕会打印如下类似信息
+Client:
+ Version:      1.8.2
+ API version:  1.20
+ Go version:   go1.4.2
+ Git commit:   0a8c2e3
+ Built:        Thu Sep 10 19:19:00 UTC 2015
+ OS/Arch:      linux/amd64
+
+Server:
+ Version:      1.8.2
+ API version:  1.20
+ Go version:   go1.4.2
+ Git commit:   0a8c2e3
+ Built:        Thu Sep 10 19:19:00 UTC 2015
+ OS/Arch:      linux/amd64
+If you would like to use Docker as a non-root user, you should now consider
+adding your user to the "docker" group with something like:
+
+  sudo usermod -aG docker your-user
+
+Remember that you will have to log out and back in for this to take effect!
+
+2 常用命令 
+https://docs.docker.com/engine/reference/commandline/tag/
+查看当前正在运行的容器
+
+
+	docker ps 
+
+  docker run --rm -ti  ubuntu 
+  --rm：告诉Docker一旦运行的进程退出就删除容器。这在进行测试时非常有用，可免除杂乱
+
+  -ti：告诉Docker分配一个伪终端并进入交互模式。这将进入到容器内，对于快速原型开发或尝试很有用，但不要在生产容器中打开这些标志[图片]ubuntu：这是容器立足的镜像
+   -t 分配一个tty终端
+  
+  docker run -d ubuntu  后台运行
+
+  交互式进入docker 环境(运行官方网站下载的镜像ubuntu)
+
+
+  docker run -i -t ubuntu /bin/bash
+  这样就进入到了docker环境里面了
+  ip a 可以看到分配到了默认的172.17.0.4的ip地址，从宿主机上可以ping通
+  但是还不能ssh，这个ubuntu没有带 openssh-server,可以安装一个
+  apt-get update
+  apt-get install openssh-server
+
+   ubuntu默认不允许root ssh登陆
+    修改配置允许root ssh 登陆
+    vi /etc/ssh/sshd_config
+    注释掉 #PermitRootLogin without-password，添加 PermitRootLogin yes
+
+  启动/etc/init.d/ssh start  
+
+  设置密码
+  passwd
+  
+  现在这个容器已经安装了ssh ，可以从宿主机上登陆测试 
+  ssh root@172.17.0.4  输入设置的密码就可以
+
+  现在需要将安装了ssh 软件的容器保存,否则下次启动就会丢失
+  docker ps 找到这个运行容器的id 
+  docker commit 51774a81beb3 learn/tutorial
+
+  docker logs <CONTAINER_ID>  : 输出容器日志   -f：实时输出
+
+  例如查看容器id = aaa 的实时日志
+  docker logs -f aaa
+
+  以后台进程方式长期运行
+  docker run -d -p 22 -p 9000:8080 ubuntu /usr/sbin/sshd -D
+  ubuntu容器内运行着的SSH Server占用22端口，-p 22进行指定。-p 9000:8080 指的是，我们的容器ubuntu将会以8080端口运行tomcat，
+  但对外（容器外）映射的端口为9000，这个9000 就是宿主机上的9000
+  然后docker ps 可以看到,类似如下的结果，这里我把输出整理为竖着的了，默认是横着表格
+  CONTAINER ID      bdd7a4dc5c31   
+  IMAGE             ubuntu
+  COMMAND          "/usr/sbin/sshd -D"     
+  CREATED           5 seconds ago
+  STATUS            Up 4 seconds
+  PORTS             0.0.0.0:32768->22/tcp, 0.0.0.0:9000->8080/tcp                         
+  NAMES             insane_galileo 
+
+   可以看到PORTS 那一栏，0.0.0.0:32768—>22 指的是宿主机上的 32768端口映射到了 容器的22端口
+   所以此时登陆时，只需要知道宿主机的ip 然后ssh指定端口就可以登陆容器了
+   ssh root@172.30.80.89 -p 32769 
+  
+   以下可以连接上容器，执行相关命令
+   docker exec -i bdd7a4dc5c31  /bin/sh  或者分配个终端 docker exec -it bdd7a4dc5c31  /bin/sh
+
+  docker cp <CONTAINER_ID>:path hostpath： 复制容器内的文件到宿主机目录上
+
+  停止、启动、杀死一个容器
+  	docker stop <容器名orID>
+  	docker start <容器名orID>
+  	docker kill <容器名orID>
+
+  删除单个容器
+  docker rm <容器名orID>
+
+  拉取镜像
+  docker pull <镜像名:tag>   如docker pull sameersbn/redmine:latest
+
+  下载的镜像其实以文件夹存放在docker的文件系统目录下 
+  /var/lib/docker/aufs/diff
+  观察发现每次运行一个容器会产生一个文件夹，文件夹名称就是容器id
+  
+  docker attach <CONTAINER_ID> 连接到启动的容器，这个命令有时会卡死，不好用
+
+网络管理
+docker run -P：随机分配端口号
+docker run -p 5000:5000：绑定特定端口号（主机的所有网络接口的5000端口均绑定容器的5000端口）
+docker run -p 127.0.0.1:5000:5000：绑定主机的特定接口的端口号
+docker run -d -p 127.0.0.1:5000:5000/udp training/webapp python app.py：绑定udp端口号
+docker port <CONTAINER_ID> 5000：查看容器的5000端口对应本地机器的IP和端口号
+ 
+使用Docker Linking连接容器：
+Docker为源容器和接收容器创建一个安全的通道，容器之间不需要暴露端口，接收的容器可以访问源容器的数据
+docker run -d -P --name <CONTAINER_NAME> --link <CONTAINER_NAME_TO_LINK>:<ALIAS>
+
+
+运行一个新容器，同时为它命名、端口映射、文件夹映射。以redmine镜像为例
+docker run --name redmine -p 9003:80 -p 9023:22 -d -v /var/redmine/files:/redmine/files -v /var/redmine/mysql:/var/lib/mysql sameersbn/redmine
+
+一个容器连接到另外一个容器
+docker run -i -t --name sonar -d -link mmysql:db   tpires/sonar-server
+sonar
+容器连接到mmysql容器，并将mmysql容器重命名为db。这样，sonar容器就可以使用db的相关的环境变量了。
+
+
+当需要把一台机器上的镜像迁移到另一台机器的时候，需要保存镜像与加载镜像。
+
+机器a
+
+docker save busybox-1 > /home/save.tar
+使用scp将save.tar拷到机器b上，然后：
+docker load < /home/save.tar
+
+
+后台运行(-d)、并暴露端口(-p)
+docker run -d -p 127.0.0.1:33301:22 centos6-ssh
+
+从container中拷贝文件出来
+sudo docker cp 7bb0e258aefe:/etc/debian_version .
+拷贝7bb0e258aefe中的/etc/debian_version到当前目录下(只要7bb0e258aefe没有被删除，文件命名空间就还在，可以放心的把exit状态的container的文件拷贝出来) 
+
+查询当前有什么image
+  docker images
+
+从本地中删除image docker-whale为image名称 
+	docker rmi -f docker-whale
+
+
+从自己的repository 中拉去imgae  
+docker pull yourusername/docker-whale
+
+3 构建自己的image 
+ 编写dockefile ,编写一个文件叫Dockerfile 内容如下
+  FROM docker/whalesay:latest
+  RUN apt-get -y update && apt-get install -y fortunes
+  CMD /usr/games/fortune -a | cowsay
+
+
+  CMD 只能有一个起作用，下面的会覆盖上面的
+  RUN 后面可以启动命令 如/etc/init.d/apache2 start 
+
+ 在DockerFile 当前目录下运行命令构建自己的image( 命令后面有个 .  不要忘记)
+   docker build -t docker-whale .    这句的意思是构建一个image 叫做docker-whale
+ 
+
+使用命令登陆docker hub 
+docker login --username=yourhubusername --password=yourpassword --email=youremail@company.com
+
+
+镜像管理
+docker images：列出本地所有镜像
+docker search <IMAGE_ID/NAME>：查找image
+docker pull <IMAGE_ID>：下载image
+docker push <IMAGE_ID>：上传image
+docker rmi <IMAGE_ID>：删除image 
+docker rmi -f <IMAGE_ID> 强制删除镜像
+
+给镜像打tag
+docker tag ubuntu localhost:5000/myfirstimage
+
+基于当前images:tag复制一个新的images
+ docker tag abc:latest abc:0.1.2
+  这样就多了一个images  abc  tag为0.1.2
+
+
+向启动的容器中传递系统参数 
+docker run -d  -e "DB_URL=xxx"  -e "USERNAME=XXX"  -e "PASS_WORD=xx"   mytest:1.0 
+这样在容器启动时候 可以获取到系统变量 $DB_URL  $USERNAME  $PASS_WORD 的值
+
+
+ 
+数据管理
+Data Volumes：volume是在一个或多个容器里指定的特殊目录
+数据卷可以在容器间共享和重复使用
+可以直接修改容器卷的数据
+容器卷里的数据不会被包含到镜像中
+容器卷保持到没有容器再使用它
+可以在容器启动的时候添加-v参数指定容器卷，也可以在Dockerfile里用VOLUMN命令添加
+docker run -d -P --name web -v /webapp training/webapp python app.py
+也可以将容器卷挂载到宿主机目录或宿主机的文件上，<容器目录或文件>的内容会被替换为<宿主机目录或文件>的内容，默认容器对这个目录有可读写权限
+docker run -d -P --name web -v <宿主机目录>:<容器目录> training/webapp python app.py
+可以通过指定ro，将权限改为只读
+docker run -d -P --name web -v <宿主机目录>:<容器目录>:ro training/webapp python app.py
+在一个容器创建容器卷后，其他容器便可以通过--volumes-from共享这个容器卷数据，如下：
+docker run -d -v /dbdata --name db1 training/postgres echo Data-only container for postgres
+首先启动了一个容器，并为这个容器增加一个数据卷/dbdata，然后启动另一个容器，共享这个数据卷
+docker run -d --volumes-from db1 --name db2 training/postgres
+此时db2使用了db1的容器卷，当容器db1被删除时，容器卷也不会被删除，只有所有容器不再使用此容器卷时，才会被删除
+docker rm -v：删除容器卷
+除了共享数据外，容器卷另一个作用是用来备份、恢复和迁移数据
+docker run --volumes-from db1 -v /home/backup:/backup ubuntu tar cvf /backup/backup.tar /dbdata
+启动一个容器数据卷使用db1容器的数据卷，同时新建立一个数据卷指向宿主机目录/home/backup，将/dbdata目录的数据压缩为/backup/backup.tar
+docker run -v /dbdata --name dbdata2 ubuntu /bin/bash
+docker run --volumes-from dbdata2 -v /home/backup:/backup busybox tar xvf /backup/backup.tar
+启动一个容器，同时把backup.tar的内容解压到容器的backup
+
+
+网络相关
+查询容器ip
+
+
+容器安装有ifconfig 命令
+docker exec 容器id  ifconfig
+或者
+docker exec 容器id  ip a
+
+或者
+docker inspect 容器id | grep IPAddress
+
+docker inspect 容器id 或者 名称可以看到容器的详细信息
+
+------------------------------------------------------------
+删除所有的非运行的docker 
+docker rm `docker ps -aq --no-trunc --filter "status=exited"`
+
+删除所有名称或者tag为none 的images
+for i in `sudo docker images|grep \<none\>|awk '{print $3}'`;do sudo docker rmi $i;done
+
+
+
+-----------------------------------------------------------------------------------------
+退出时删除容器
+
+如果你仅仅想在一个容器中快速的运行一个命令，然后退出，并且不用担心容器状态，把 --rm 参数加入 run 命令后面,这将结束很多你保存了的容器，并且清理它们。
+
+示例：docker run --rm -i -t busybox
+ /bin/bash
+
+-------------------------------------------------------------------------------------------
+ privileged参数
+
+
+$ docker help run 
+...
+--privileged=false         Give extended privileges to this container
+...
+大约在0.6版，privileged被引入docker。
+使用该参数，container内的root拥有真正的root权限。
+否则，container内的root只是外部的一个普通用户权限。
+privileged启动的容器，可以看到很多host上的设备，并且可以执行mount。
+甚至允许你在docker容器中启动docker容器。
+
+未设置privileged启动的容器：
+
+
+[root@localhost ~]# docker run -t -i centos:latest bash
+[root@65acccbba42f /]# ls /dev
+console  fd  full  fuse  kcore  null  ptmx  pts  random  shm  stderr  stdin  stdout  tty  urandom  zero
+[root@65acccbba42f /]# mkdir /home/test/
+[root@65acccbba42f /]# mkdir /home/test2/
+[root@65acccbba42f /]# mount -o bind /home/test  /home/test2
+mount: permission denied
+设置privileged启动的容器：
+
+
+[root@localhost ~]# docker run -t -i --privileged centos:latest bash

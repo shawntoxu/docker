@@ -1,0 +1,37 @@
+docker 文件系统
+http://www.infoq.com/cn/articles/docker-source-code-analysis-part11
+
+一个运行的容器会创建三个文件夹
+假设存储驱动 使用的aufs
+
+一个容器id=123
+/var/lib/docker/aufs  下面对应diff  layers 及mnt 文件夹下面都有一个名为123的文件夹，
+代表同一个镜像ID
+
+.
+├── aufs
+├── containers    保存运行的容器的metadata 配置及log
+├── graph
+├── linkgraph.db
+├── network
+├── repositories-aufs
+├── tmp
+├── trust
+└── volumes
+
+
+
+aufs
+├── diff
+├	 ├── 123   存储每一个镜像所在的layer，具体包含的文件系统内容(修改底下的文件内容可直接作用到运行的容器中)
+├── layers
+├    ├── 123   保存镜像的元数据，这些元数据是这个镜像的祖先镜像ID列表
+└── mnt
+     ├── 123   运行的容器被挂载的目录
+               在该层镜像之上挂载的可读写layer(修改底下的文件内容可直接作用到运行的容器中)
+
+               运行的容器删除后 对应容器ID 的目录就删除了
+               docker rm -f 容器ID
+
+
+

@@ -1,0 +1,53 @@
+172.30.10.195:5000/gkt/gkt-adspush-web:1457664566
+
+
+api地址
+https://docs.docker.com/registry/spec/api/#deleting-an-image
+
+测试删除
+
+取得digest 
+api
+
+HEAD /v2/<name>/manifests/<reference>
+
+1 
+安装HEAD apt-get install libwww-perl 
+HEAD  http://172.30.10.195:5000/v2/gkt/gkt-adspush-web/manifests/1457664566
+
+返回
+200 OK
+Connection: close
+Date: Thu, 14 Jul 2016 05:55:34 GMT
+ETag: "sha256:c68e1ec44c1e6593e0c2b6e452243a73902b619bf911c39dfbd0e0f5d95309ef"
+Content-Length: 66372
+Content-Type: application/vnd.docker.distribution.manifest.v1+prettyjws
+Client-Date: Thu, 14 Jul 2016 05:55:35 GMT
+Client-Peer: 172.30.10.195:5000
+Client-Response-Num: 1
+Docker-Content-Digest: sha256:c68e1ec44c1e6593e0c2b6e452243a73902b619bf911c39dfbd0e0f5d95309ef
+Docker-Distribution-Api-Version: registry/2.0
+X-Content-Type-Options: nosniff
+
+Docker-Content-Digest 为digest  即sha256:c68e1ec44c1e6593e0c2b6e452243a73902b619bf911c39dfbd0e0f5d95309ef
+
+
+2 开始删除
+删除镜像API
+/v2/<name>/manifests/<reference>
+
+
+ curl -X DELETE  http://172.30.10.195:5000/v2/gkt/gkt-adspush-web/manifests/sha256:c68e1ec44c1e6593e0c2b6e452243a73902b619bf911c39dfbd0e0f5d95309ef
+
+
+3 删除一个layer 
+DELETE /v2/<name>/blobs/<digest>
+
+ curl -X DELETE http://172.30.10.195:5000/v2/gkt/gkt-adspush-web/blobs/sha256:c68e1ec44c1e6593e0c2b6e452243a73902b619bf911c39dfbd0e0f5d95309ef 
+
+
+deleleImages.sh 
+
+gkt/gkt-adspush-web     /mnt/paas_cd/paas/registry_data_v2/docker/registry/v2/repositories/gkt/gkt-adspush-web/_manifests/tags
+
+gkt/gkt-statistics-web /mnt/paas_cd/paas/registry_data_v2/docker/registry/v2/repositories/gkt/gkt-statistics-web/_manifests/tags

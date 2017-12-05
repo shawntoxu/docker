@@ -1,0 +1,174 @@
+registry  server 要求docker版本大于1.6
+
+在本地运行一个
+docker run -d -p 5000:5000 --restart=always --name registry registry:2
+
+在docker hub 下载一个images，并且打tag 指向自己的registry
+docker pull ubuntu && docker tag ubuntu localhost:5000/ubuntu
+
+上传到registry
+docker push localhost:5000/ubuntu
+
+从registry下载
+docker pull localhost:5000/ubuntu
+
+停止registry
+docker stop registry && docker rm -v registry
+
+
+默认的registry 的数据保存在主机的 docker volume中
+也可以在运行时指定存储路径
+docker run -d -p 5000:5000 --restart=always --name registry \
+  -v `pwd`/data:/var/lib/registry \
+  registry:2
+
+也可以考虑将images 存储在其他文件系统中
+参考
+https://github.com/docker/distribution/blob/master/docs/configuration.md#storage
+
+----------------------------------------------------------------------------、
+https://docs.docker.com/registry/deploying/
+
+建立一个domain registry 
+
+假设需要域为 mydocker.registry.cc
+假设证书保存位置
+
+可以使用自签名的证书
+https://docs.docker.com/registry/insecure/
+
+生成自签名证书
+mkdir -p certs && openssl req \
+  -newkey rsa:4096 -nodes -sha256 -keyout certs/domain.key \
+  -x509 -days 365 -out certs/domain.crt
+
+确保证书的CN = mydocker.registry.cc
+
+放之前先停止registry
+将crt文件和key文件放到 certs中
+certs/domain.crt
+certs/domain.key
+
+启动registry，并带上TLS
+docker run -d -p 5000:5000 --restart=always --name registry \
+  -v `pwd`/certs:/certs \
+  -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+  -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+  registry:2
+
+
+ 让其他节点的docker 进程信任证书
+ 复制domain.crt证书到docker节点的以下位置
+ /etc/docker/certs.d/mydocker.registry.cc:5000/ca.crt
+
+ 然后重启docker
+
+这样你就可以在其他机子上访问你的registry
+docker pull ubuntu
+docker tag ubuntu mydocker.registry.cc:5000/ubuntu
+docker push mydocker.registry.cc:5000/ubuntu
+docker pull mydocker.registry.cc:5000/ubuntu
+
+
+可能问题：
+一些版本的docker 需要操作系统级别的证书信任
+
+ubuntu 系统:
+cp auth/domain.crt /usr/local/share/ca-certificates/mydocker.registry.cc.crt
+update-ca-certificates
+
+redhat系统:
+cp auth/domain.crt /etc/pki/ca-trust/source/anchors/mydocker.registry.cc.crt
+update-ca-trust
+
+重启service docker stop && service docker start
+
+
+-----------------------------------------------------------------------------
+
+registry 的api调用 v2版本
+
+https://docs.docker.com/registry/spec/api/
+
+v1版本的registry  APi 在docker 1.7的时候已经标记为过期了
+v1 api 
+https://docs.docker.com/v1.6/reference/api/registry_api/
+
+列出 某个image的 tags
+namespace  例如 paas
+repository 例如 ubuntu14-dev-mysql
+GET /v1/repositories/(namespace)/(repository)/tags
+
+ali.repo.ndp.com:5000是地址
+那么可以如下访问
+curl http://ali.repo.ndp.com:5000/v1/repositories/paas/ubuntu14-dev-mysql/tags
+
+列出所有的images
+/v1/search
+
+
+
+-------------------------------------------------------------------------------------
+
+删除镜像API
+/v2/<name>/manifests/<reference>
+
+删除前提是要registry 2启动前加上参数REGISTRY_STORAGE_DELETE_ENABLED=True
+#!/bin/bash
+docker run -d -e "REGISTRY_STORAGE_DELETE_ENABLED=True" --restart=always  -v /mnt/data/registry2/:/var/lib/registry/ -p 5000:5000  registry:2 
+
+
+name=gkt/gkt-content-web
+digest=3297907b52489d21a82e2aa0eb2d70b2672b0dc529c8eb95dd65063f359ba60f
+
+curl -X DELETE http://172.30.10.195:5000/v2/gkt/gkt-content-web/manifests/3297907b52489d21a82e2aa0eb2d70b2672b0dc529c8eb95dd65063f359ba60f
+
+
+镜像全地址
+10.7.0.4:5000/yeahmobi_snapshots/ym-boost:114deef0144fe2d508a1f7fcd2181eb60a3c1a66
+
+取得digest 即 reference 
+可以通过 push下这个image,push成功后最后一行就显示了digest 
+docker push 10.7.0.4:5000/yeahmobi_snapshots/ym-boost:114deef0144fe2d508a1f7fcd2181eb60a3c1a66 
+
+
+----删除
+  curl -X DELETE 10.7.0.4:5000/v2/yeahmobi_snapshots/ym-boost/manifests/sha256:fe32c8d60a44614a8da653a479ac7ac45cf8daa13379fb5acbe416e6e087d97d
+
+ curl -X DELETE 10.7.0.4:5000/v2/paas/ubuntu-14.04-dev/manifests/sha256:f19d815d0d6a976bc386a62176d10b24b36259fb43dea9d963748e207d0f1bbe
+
+---------------------------------------------------------
+其他API
+ 取得所有 namespace 及image
+  curl http://172.30.10.195:5000/v2/_catalog
+
+取得configcenter/config-center-java  image 的tag
+  curl http://172.30.10.195:5000/v2/configcenter/config-center-java/tags/list
+
+  /manifests/1.0
+ 
+查询具体的一个iamges  reference 这里是tag 或者 digest
+GET /v2/<name>/manifests/<reference>
+
+
+curl http://172.30.10.195:5000/v2/configcenter/config-center-java/manifests/1.0
+
+
+
+-----------------------------------------------------------------------------------
+
+ curl http://172.30.10.195:5000/v2/_catalog  | python -m json.tool 
+ curl http://172.30.10.195:5000/v2/facebookpmd_pmdr_snapshots/fbagent-services/tags/list  | python -m json.tool 
+
+删除registry中的image 开源
+
+export REGISTRY_DATA_DIR=/mnt/paas_cd/paas/registry_data/docker/registry/v2
+
+delete_docker_registry_image --image facebookpmd_pmdr_snapshots/fbagent-services:test_custom_fmp_001
+
+如果在registry 运行下删除的话,删除完需要重启下 registry 
+
+否则在提交一次删除了tag的 images 提交上去下载会有问题
+
+
+

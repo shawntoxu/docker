@@ -1,0 +1,22 @@
+https://docs.docker.com/v1.8/reference/api/remote_api_client_libraries/
+
+要使用remotea api 首先要开启
+在docker 启动配置文件中加入 要监听的端口 例如：
+默认以文件socket方式启动docker的，改成tcp的就可以了
+
+DOCKER_OPTS='-H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock'
+
+docker remote api 根据docker 版本有不同版本api
+
+API 版本介绍
+https://docs.docker.com/engine/reference/api/docker_remote_api/
+
+测试是否可调用
+curl 127.0.0.1:2375/info 
+
+查询所有镜像
+/images/json  
+
+
+
+

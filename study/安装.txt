@@ -1,0 +1,47 @@
+是ubuntu 14.04系列的系统要安装aufs
+ 可以直接使用系统自带的 apt-get  / yum 等安装
+
+
+
+
+ 存储driver 有  
+ aufs (可以在运行的容器间共享images,减小磁盘开销)  
+     docker 默认的存储driver 但是需要内核支持,一般使用这个存储driver 可以
+     不适合大文件的 写,因为其要搜索image 的所有layer，直到找到文件要写的文件然后复制
+     到top 可写layer
+
+      ：AUFS 的 CoW 特性在写入大型文件时第一次会出现延迟
+
+     删除文件是 将top 可写layer 的文件通过在上层的可写的目录下建立对应的whiteout隐藏文件来实现的。，而不是真正将其依赖的image layer(read only)
+     的文件删除,这样就不会对其依赖的 image layer 产生任何影响
+
+     在运行的容器中删除一个只读层的文件，对应的容器aufs/diff/ID/ 现了一个 .wh 文件，镜像层中的文件保持不变
+     比如删除abc  将出现一个.wh.abc 
+     手动将.wh.abc 删除，文件就回到了容器中
+
+     
+   启动参数配置
+  	DOCKER_OPTS="--storage-driver=aufs"
+
+  	docker info 可以查看使用的那种driver
+
+
+
+ devicemapper    Linux 内核driver 
+
+
+
+ubuntu 14.04 内核不带aufs  需要安装
+ apt-get install -y linux-image-extra-$(uname -r) linux-image-extra-virtual
+ aufs加载到内核
+ modprobe  aufs
+
+查看 aufs 是否加载
+lsmod |grep aufs 
+
+
+当前生产环境中建议根据OS不同 使用如下driver： 
+rhel，centos，fedora：devicemapper direct-lvm 
+ubuntu：aufs 
+suse：brtfs 
+
