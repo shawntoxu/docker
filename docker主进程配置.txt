@@ -1,0 +1,1 @@
+docker 1.12 以后 有个 --live-restore 配置，当docker 主进程挂后，不影响容器
