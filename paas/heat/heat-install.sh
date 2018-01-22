@@ -2,7 +2,7 @@
 export PATH=/sbin:/usr/sbin:/usr/local/sbin:/usr/local/bin:/usr/bin:/bin
 export WORKDIR=$( cd ` dirname $0 ` && pwd )
 cd "$WORKDIR" || exit 1
-$registry = myregisty:5000
+registry=myregisty:5000
 get_my_ip()
 {
     my_ip=$(ip route get 1.0.0.0 | head -1 | cut -d' ' -f8)
@@ -75,14 +75,14 @@ wait_for_service_ready()
 install_mysql()
 {
     echo 'pulling $registry/mysql:5.5...'
-    docker pull $registry/mysql:5.5 > /dev/null
+    docker pull $registry/heat-mysql:5.5 > /dev/null
 
     mkdir -p ${PERSIST_DISK}/docker/mysql
     docker run --name mysql -h mysql \
         -v ${PERSIST_DISK}/docker/mysql:/var/lib/mysql \
         -e MYSQL_ROOT_PASSWORD=Letmein123 \
         -p 23306:3306 \
-        -d $registry/mysql:5.5
+        -d $registry/heat-mysql:5.5
     echo 'sleep 10s to ensure mysql is ready'
     sleep 10 
     echo 'intalled mysql'
@@ -91,13 +91,13 @@ install_mysql()
 install_rabbitmq()
 {
     echo 'pulling $registry/rabbitmq'
-    docker pull $registry/rabbitmq > /dev/null
+    docker pull $registry/heat-rabbitmq > /dev/null
 
     docker run -d \
         --hostname rabbitmq \
         --name rabbitmq \
         -e RABBITMQ_DEFAULT_PASS=Letmein123 \
-        $registry/rabbitmq
+        $registry/heat-rabbitmq
     echo 'sleep 2s to ensure rabbitmq is ready..'
     sleep 2 
     echo 'installed rabbitmq'
@@ -197,7 +197,7 @@ PERSIST_DISK=/pdata
 
 if [[ $# != 2 ]]; then
     echo "usage: $0 hosts_conf kube_cert_file"
-    echo "e.g  : $0 bash heat_restart.aws_shawntest.sh  \"172.30.80.23 test.k8s.cc\" /opt/yaas/auth/ssl-cert/server.crt"
+    echo "e.g  : $0 bash heat_restart.aws_shawntest.sh  \"172.30.80.23 test.k8s.cc\" /opt/paas/auth/ssl-cert/server.crt"
     exit 1
 fi
 
