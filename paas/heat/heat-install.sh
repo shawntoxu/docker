@@ -205,7 +205,7 @@ fi
 pre_check
 install_mysql
 install_rabbitmq
-u need to run 
+#u need to run 
 install_keystone
 install_heat
 check_heat_client
