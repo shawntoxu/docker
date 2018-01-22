@@ -59,10 +59,11 @@ DOCKER_INSECURE_REGISTRY_LIST
 修改证书相关文件
 
 在启动master节点前生成证书，否则重新生成证书需要重新启动master
+mkdir /opt/paas/auth/ssl-sert -p
 生成证书文件
    openssl req \
-  -newkey rsa:4096 -nodes -sha256 -keyout /opt/yaas/auth/ssl-cert/server.key \
-  -x509 -days 3650 -out /opt/yaas/auth/ssl-cert/server.crt
+  -newkey rsa:4096 -nodes -sha256 -keyout /opt/paas/auth/ssl-cert/server.key \
+  -x509 -days 3650 -out /opt/paas/auth/ssl-cert/server.crt
 
 FQDN 输入master主机域名： 比如这里是test.k8s.cc
 
