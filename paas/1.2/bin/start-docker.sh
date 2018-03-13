@@ -76,6 +76,7 @@ ulimit -n 65535
 # version > 1.8.3   daemon 
 # add ulimit set 
 #docker daemon  --default-ulimit nofile=65535:65535 --default-ulimit nproc=65535:65535 --bip=${FLANNEL_SUBNET} --mtu=${FLANNEL_MTU} ${insecure_registries} --log-level=${DOCKER_LOG_LEVEL} --storage-driver=${STORAGE} >> $DOCKER_LOG_FILE 2>&1 &
+#dockerd --bip 172.17.0.1/16 --mtu 1222 --insecure-registry mytest.cc --log-level debug> /home/ec2-user/d.log 2>&1 &
 
 docker -d --bip=${FLANNEL_SUBNET} --mtu=${FLANNEL_MTU} ${insecure_registries} --log-level=${DOCKER_LOG_LEVEL} --storage-driver=aufs >> $DOCKER_LOG_FILE 2>&1 &
 sleep 2
