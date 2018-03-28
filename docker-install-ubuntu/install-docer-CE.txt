@@ -1,3 +1,6 @@
+#remove old version
+sudo apt-get remove docker docker-engine docker.io
+
 add-apt-repository \ 
  "deb [arch=amd64] xxxxx"  
  
