@@ -1,0 +1,14 @@
+add-apt-repository \ 
+ "deb [arch=amd64] xxxxx"  
+ 
+ 
+ sudo apt-get update 
+ 
+ #install  a specific version of Docekr CE insterd of always  using the latest 
+ 
+ 
+ apt-cache madison docker-ce 
+ 
+ #then  install 
+ 
+ sudo apt-get install docker-ce=<version>
