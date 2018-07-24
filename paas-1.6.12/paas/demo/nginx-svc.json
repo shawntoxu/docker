@@ -1,0 +1,23 @@
+{
+					"kind": "Service",
+					"apiVersion": "v1",
+					"metadata": {
+						"namespace": "test",
+						"name": "nginx",
+						"labels": {
+							"name": "nginx"
+						}
+					},
+					"spec": {
+						"ports": [{
+							"port": 80,
+							"targetPort": 80,
+							"protocol": "TCP"
+						}],
+						"deprecatedPublicIPs": ["10.10.1.203"],
+						"selector": {
+							"name": "nginx"
+						}
+					}
+	}
+

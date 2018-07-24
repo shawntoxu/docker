@@ -1,0 +1,46 @@
+	{			
+		"kind": "ReplicationController",
+					"apiVersion": "v1",
+					"metadata": {
+						"name": "nginx",
+						"namespace": "test",
+						"labels": {
+							"name": "nginx"
+						}
+					},
+					"spec": {
+						"replicas": 1,
+						"selector": {
+							"name": "nginx"
+						},
+						"template": {
+							"metadata": {
+								"namespace": "test",
+								"labels": {
+									"name": "nginx"
+								}
+							},
+							"spec": {
+								"volumes": [{
+									"name": "nginx-data",
+									"hostPath": {
+										"path": "/var/lib/nginx1-data"
+									}
+								}],
+								"containers": [{
+									"name": "nginx1",
+									"image": "nginx",
+									"volumeMounts": [{
+										"name": "nginx-data",
+										"mountPath": "/test"
+									}],
+									"resources": {
+										"limits": {
+											"memory": "256Mi"
+										}
+									}
+								}]
+							}
+						}
+					}
+}

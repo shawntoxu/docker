@@ -1,0 +1,217 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import subprocess
+import getopt
+import kubernetes
+import xmlrpclib
+import json
+from socket import *
+import etcd
+import time
+
+master_ip = os.environ['PAAS_MASTER']
+etcd_client = etcd.Client(host=master_ip, port=4001)
+kube_client = kubernetes.Api(base_url="http://{}:8080/api/v1".format(master_ip),
+                             request_headers={"Content-Type": "application/merge-patch+json"})
+
+def set_node_schedulable(node_name, schedulable = False):
+    for i in range(3):
+        try:
+            kube_client.SetNodeSchedulable(node_name, schedulable)
+            break
+        except Exception, e:
+            print e
+            time.sleep(1)
+
+def cmd_hopen(argv):
+    def usage():
+        print "paas hopen [-x] NODE_NAME ..."
+
+    try:
+        opts, args = getopt.getopt(argv, 'x')
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+
+    if len(args) < 1:
+        usage()
+        sys.exit(2)
+
+    node_list = args
+    for opt, arg in opts:
+        if opt in ('-x'):
+            all_nodes = kube_client.GetNodes()
+            all_node_names = [ node.name for node in all_nodes ]
+            node_names = list(set(all_node_names)- set(node_list))
+            node_list = node_names
+
+    print node_list
+    for node_name in node_list:
+        set_node_schedulable(node_name, True)
+
+def cmd_hclose(argv):
+    def usage():
+        print "paas hclose [-x] NODE_NAME ..."
+
+    try:
+        opts, args = getopt.getopt(argv, 'x')
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+
+    if len(args) < 1:
+        usage()
+        sys.exit(2)
+
+    node_list = args
+    for opt, arg in opts:
+        if opt in ('-x'):
+            all_nodes = kube_client.GetNodes()
+            all_node_names = [ node.name for node in all_nodes ]
+            node_names = list(set(all_node_names)- set(node_list))
+            node_list = node_names
+
+    print node_list
+    for node_name in node_list:
+        set_node_schedulable(node_name, False)
+
+def cmd_pods(argv):
+    def usage():
+        print "paas pods [namespace]"
+
+    exec_file = os.environ['PAAS_BINDIR'] + '/pods.pyc'
+    cmd_line = ['python', exec_file, os.environ['PAAS_MASTER']]
+    for arg in argv:
+        cmd_line.append(arg)
+
+    child = subprocess.Popen(cmd_line)
+    child.wait()
+
+def is_tcp_port_alive(node_ip, port_number):
+    aaddr = (node_ip, port_number)
+    client = socket(AF_INET, SOCK_STREAM)
+    client.settimeout(2.0)
+    ret = True
+    try:
+        client.connect(addr)
+    except:
+        raise
+        ret = False
+    finally:
+        return ret
+
+def get_state_of_node(node_ip):
+    etcd_key = "/paas/nodes/" + node_ip
+    try:
+        value = etcd_client.read(etcd_key).value
+        result = json.loads(value)
+        if int(time.time()) - result['timestamp'] > 120:
+            return None
+        return result
+    except Exception, e:
+        #print e
+        return None
+
+def cmd_nodes(argv):
+    def get_node_status_str(node):
+        ret  = ""
+        if node.is_ready():
+            ret = "Ready"
+        else:
+            ret = "NotReady"
+
+        if node.spec.unschedulable:
+            ret = ret + "/Unschedulable"
+
+        return ret
+
+    node_list = kube_client.GetNodes()
+
+    name_column = [ 'NAME' ]
+    name_column_max_len = len(name_column[0])
+
+    status_column = [ 'STATUS' ]
+    status_column_max_len = len(status_column[0])
+
+    pod_num_column = [ 'POD' ]
+    pod_num_column_max_len = len(pod_num_column[0])
+
+    max_mem_column = [ 'MEM_LIMITS']
+    max_mem_column_max_len = len(max_mem_column[0])
+
+    avail_mem_column = ['MEM_AVAIL']
+    avail_mem_column_max_len = len(avail_mem_column[0])
+
+    cpu_num_column = ['CORE']
+    cpu_num_column_max_len = len(cpu_num_column[0])
+
+    load_column = ['LOAD']
+    load_column_max_len = len(load_column[0])
+
+    for node in node_list:
+        node_state = get_state_of_node(node.name)
+
+        name_column.append(node.name)
+        if name_column_max_len < len(node.name):
+            name_column_max_len = len(node.name)
+
+        status_str = get_node_status_str(node)
+        status_column.append(status_str)
+        if status_column_max_len < len(status_str):
+            status_column_max_len = len(status_str)
+
+        pod_num_column.append(str(node.pod_num))
+        if pod_num_column_max_len < len(str(node.pod_num)):
+            pod_num_column_max_len = len(str(node.pod_num))
+
+        mem_str = "{:.0f}M/{:.0f}M".format(node.mem_limit_used, node.capacity.memory)
+        max_mem_column.append(mem_str)
+        if max_mem_column_max_len < len(mem_str):
+            max_mem_column_max_len = len(mem_str)
+
+        if node_state:
+            mem_str = "{:.0f}M".format(float(node_state['mem_available'])/1024/1024)
+        else:
+            mem_str = "-"
+        avail_mem_column.append(mem_str)
+        if avail_mem_column_max_len < len(mem_str):
+            avail_mem_column_max_len = len(mem_str)
+
+        cpu_num_column.append(node.capacity.cpu)
+        if cpu_num_column_max_len < len(node.capacity.cpu):
+            cpu_num_column_max_len = len(node.capacity.cpu)
+
+        load_str = '-'
+        if node_state is not None:
+            load_str = "{:.2f}, {:.2f}, {:.2f}".format(node_state['load1'], node_state['load5'], node_state['load15'])
+        load_column.append(load_str)
+        if load_column_max_len < len(load_str):
+            load_column_max_len = len(load_str)
+
+    format_str = "%-{}s  %-{}s  %-{}s  %-{}s  %-{}s  %-{}s  %-{}s".format(name_column_max_len, status_column_max_len, pod_num_column_max_len, max_mem_column_max_len, avail_mem_column_max_len, cpu_num_column_max_len, load_column_max_len)
+    for i in range(len(name_column)):
+        print format_str % (name_column[i], status_column[i], pod_num_column[i], max_mem_column[i], avail_mem_column[i], cpu_num_column[i], load_column[i])
+
+CMD_LIST = {
+    "hopen" : cmd_hopen,
+    "hclose" : cmd_hclose,
+    "pods" : cmd_pods,
+    "nodes": cmd_nodes,
+}
+
+def main(argv):
+    if len(argv) < 1:
+        print "usage error"
+        sys.exit(2)
+
+    if argv[0] not in CMD_LIST:
+        print "unknown command <%s>" % argv[0]
+        sys.exit(2)
+
+    CMD_LIST[argv[0]](argv[1:])
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+

@@ -1,0 +1,10 @@
+
+paas-api docker
+
+if yue are using the new paas-api :
+
+#bak the old application 
+cp application.py old_application.py 
+
+#rename the application_new.py to  application.py 
+mv application_new.py application.py 

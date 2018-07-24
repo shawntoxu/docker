@@ -1,0 +1,1 @@
+bash heat-install.sh "10.10.2.59  master.com" /opt/paas/auth/ssl-cert/server.crt 

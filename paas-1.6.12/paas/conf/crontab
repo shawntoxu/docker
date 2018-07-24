@@ -1,0 +1,11 @@
+1 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/etcd/etcd.log 5 20
+2 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/paas/docker.log 5 20
+3 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/paas/flannel.log 5 20
+4 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/paas/kube-apiserver.log 5 20
+5 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/paas/kube-controller-manager.log 5 20
+6 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/paas/kubelet.log 5 20
+7 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/paas/kube-proxy.log 5 20
+8 * * * * /opt/paas/1.2/bin/paas_arrange_log.sh /var/log/paas/kube-scheduler.log 5 20
+23 1 * * * /opt/paas/1.2/bin/docker_container_clean.sh
+10 2 * * * /opt/paas/1.2/bin/ipcleaner.sh
+0 0 * * 6 /opt/paas/1.2/bin/docker_image_clean.sh
